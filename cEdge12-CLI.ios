@@ -1,0 +1,221 @@
+ system
+ system-ip             10.10.10.12
+ site-id               10
+ admin-tech-on-failure
+ organization-name     itbase.tv
+ vbond 10.0.1.10 port 12346
+!
+memory free low-watermark processor 68425
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service tcp-small-servers
+no service udp-small-servers
+platform console serial
+platform qfp utilization monitor load 80
+platform punt-keepalive disable-kernel-core
+hostname cEdge-12
+username admin privilege 15 secret 5 $1$GLS6$1OezK9MijHzV624q5JHWw/
+no ip finger
+no ip rcmd rcp-enable
+no ip rcmd rsh-enable
+no ip dhcp use class
+ip route 0.0.0.0 0.0.0.0 10.10.11.1
+ip route 0.0.0.0 0.0.0.0 79.12.12.254
+ip ssh version 2
+no ip http server
+ip http secure-server
+ip nat inside source list nat-dia-vpn-hop-access-list interface GigabitEthernet1 overload
+ip nat settings central-policy
+ip nat settings gatekeeper-size 1024
+interface GigabitEthernet1
+ no shutdown
+ ip address 79.12.12.12 255.255.255.0
+ ip nat outside
+ no mop enabled
+ no mop sysid
+ negotiation auto
+exit
+interface GigabitEthernet2
+ no shutdown
+ no mop enabled
+ no mop sysid
+ negotiation auto
+exit
+interface GigabitEthernet3
+ no shutdown
+ no mop enabled
+ no mop sysid
+ negotiation auto
+exit
+interface GigabitEthernet4
+ no shutdown
+ no mop enabled
+ no mop sysid
+ negotiation auto
+exit
+interface GigabitEthernet4.10
+ description **** To TLOC-EX-10_private1 ****
+ no shutdown
+ encapsulation dot1Q 10
+ ip address 10.10.11.2 255.255.255.252
+exit
+interface GigabitEthernet4.30
+ description **** To TLOC-EX-30_biz-internet ****
+ no shutdown
+ encapsulation dot1Q 30
+ ip address 10.30.11.2 255.255.255.252
+exit
+interface Tunnel1
+ no shutdown
+ ip unnumbered GigabitEthernet1
+ tunnel source GigabitEthernet1
+ tunnel mode sdwan
+exit
+interface Tunnel10
+ no shutdown
+ ip unnumbered GigabitEthernet4.10
+ no ip redirects
+ tunnel source GigabitEthernet4.10
+ tunnel mode sdwan
+exit
+aaa authentication enable default enable
+aaa authentication login default local
+aaa authorization console
+aaa authorization exec default local
+login on-success log
+line aux 0
+ stopbits 1
+!
+line con 0
+ stopbits 1
+!
+line vty 0 4
+!
+line vty 5 80
+!
+sdwan
+ interface GigabitEthernet1
+  tunnel-interface
+   encapsulation ipsec
+   color biz-internet
+   no allow-service bgp
+   allow-service dhcp
+   allow-service dns
+   allow-service icmp
+   no allow-service sshd
+   no allow-service netconf
+   no allow-service ntp
+   no allow-service ospf
+   no allow-service stun
+   allow-service https
+   no allow-service snmp
+   no allow-service bfd
+  exit
+ exit
+ interface GigabitEthernet4.10
+  tunnel-interface
+   encapsulation ipsec
+   color private1
+   no allow-service bgp
+   allow-service dhcp
+   allow-service dns
+   allow-service icmp
+   no allow-service sshd
+   no allow-service netconf
+   no allow-service ntp
+   no allow-service ospf
+   no allow-service stun
+   allow-service https
+   no allow-service snmp
+   no allow-service bfd
+  exit
+ exit
+ interface GigabitEthernet4.30
+  tloc-extension GigabitEthernet1
+ exit
+ appqoe
+  no tcpopt enable
+  no dreopt enable
+ !
+ omp
+  no shutdown
+  graceful-restart
+  no as-dot-notation
+  address-family ipv4
+   advertise connected
+   advertise static
+  !
+  address-family ipv6
+   advertise connected
+   advertise static
+  !
+ !
+!
+licensing config enable false
+licensing config privacy hostname false
+licensing config privacy version false
+licensing config utility utility-enable false
+security
+ ipsec
+  integrity-type ip-udp-esp esp
+ !
+!
+sslproxy
+ no enable
+ rsa-key-modulus      2048
+ certificate-lifetime 730
+ eckey-type           P256
+ ca-tp-label          PROXY-SIGNING-CA
+ settings expired-certificate  drop
+ settings untrusted-certificate drop
+ settings unknown-status       drop
+ settings certificate-revocation-check none
+ settings unsupported-protocol-versions drop
+ settings unsupported-cipher-suites drop
+ settings failure-mode         close
+ settings minimum-tls-ver      TLSv1
+ dual-side optimization enable
+!
+!---Custom Config Begin--!
+!
+no interface GigabitEthernet4.10
+no interface GigabitEthernet4.30
+!
+sdwan
+ no interface GigabitEthernet4.10
+ no interface GigabitEthernet4.30
+ exit
+!
+no interface Tunnel10
+!
+interface GigabitEthernet4.110
+ description **** To TLOC-EX-110_private1 ****
+ no shutdown
+ encapsulation dot1Q 110
+ ip address 10.10.11.2 255.255.255.252
+exit
+!
+interface GigabitEthernet4.130
+ description **** To TLOC-EX-130_biz-internet ****
+ no shutdown
+ encapsulation dot1Q 130
+ ip address 10.30.11.2 255.255.255.252
+exit
+!
+interface Tunnel110
+ no shutdown
+ ip unnumbered GigabitEthernet4.110
+ no ip redirects
+ tunnel source GigabitEthernet4.110
+ tunnel mode sdwan
+exit
+!
+sdwan
+ interface GigabitEthernet4.110
+  tunnel-interface
+   encapsulation ipsec
+   color private1
+ interface GigabitEthernet4.130
+  tloc-extension GigabitEthernet1
+!
+!---Custom Config End---!
